@@ -1,27 +1,39 @@
+.gp-poll-btn {
+    margin-left: 4px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px;
+    display: inline-flex;
+    align-items: center;
+    color: #666;
+}
+
+.gp-poll-btn:hover {
+    color: #5E4C84 !important;
+}
+
 .gp-poll-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(4px); /* Matches modern hub UI */
-    z-index: 99999;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 100000;
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: fadeIn 0.3s ease;
 }
 
 .gp-poll-container {
     width: 90%;
-    max-width: 600px;
-    height: 80vh;
-    background: white;
-    border-radius: 12px;
+    max-width: 500px;
+    height: 600px;
+    background: #fff;
+    border-radius: 15px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
 }
 
 .gp-poll-iframe {
@@ -32,17 +44,15 @@
 
 .gp-poll-close {
     position: absolute;
-    top: 10px;
-    right: 15px;
-    font-size: 28px;
-    background: none;
+    top: 10px; right: 15px;
+    font-size: 30px;
+    line-height: 1;
+    background: white;
     border: none;
     cursor: pointer;
-    color: #555;
+    color: #333;
     z-index: 10;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    border-radius: 50%;
+    width: 35px; height: 35px;
+    display: flex; align-items: center; justify-content: center;
 }
