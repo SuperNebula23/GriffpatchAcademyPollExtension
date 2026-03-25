@@ -1,13 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Griffpatch Hub Poll Adder",
+  "name": "GA Hub Poll Shortcut",
   "version": "1.0",
-  "description": "Adds an 'Add Poll' button to the discussion toolbar.",
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "poll-adder@your-name.local"
-    }
-  },
+  "description": "Quick access to the community poll creator.",
   "permissions": ["activeTab"],
   "content_scripts": [
     {
