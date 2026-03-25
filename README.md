@@ -4,8 +4,9 @@ This browser extension adds a quick-access "Add Poll" button to the [Griffpatch 
 
 ## Features
 - Injects a bar-chart icon next to the "Add Video" button.
-- Opens a community-made poll creator in a clean popup.
+- Opens a community-made poll creator in a clean popup. If you want to know what i use here https://github.com/speechless-parrot/ga-polls
 - Works on both Chrome and Firefox.
+- 
 
 ## Installation
 
