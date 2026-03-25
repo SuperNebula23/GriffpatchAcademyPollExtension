@@ -27,11 +27,27 @@ function createPollButton() {
     return btn;
 }
 
-const observer = new MutationObserver(() => {
-    const videoBtn = document.querySelector('button[title="Add Video"].comments-input-btn');
-    if (videoBtn && !document.querySelector('.gp-poll-btn')) {
-        videoBtn.after(createPollButton());
-    }
+// This function finds ALL video buttons and adds the poll button next to them
+function injectPollButtons() {
+    const videoButtons = document.querySelectorAll('button[title="Add Video"].comments-input-btn');
+    
+    videoButtons.forEach(videoBtn => {
+        // If the poll button isn't already next to THIS specific video button
+        if (!videoBtn.nextElementSibling || !videoBtn.nextElementSibling.classList.contains('gp-poll-btn')) {
+            videoBtn.after(createPollButton());
+        }
+    });
+}
+
+// 1. Run it immediately when the script loads
+injectPollButtons();
+
+// 2. Watch for new comment boxes appearing (MutationObserver)
+const observer = new MutationObserver((mutations) => {
+    injectPollButtons();
 });
 
-observer.observe(document.body, { childList: true, subtree: true });
+observer.observe(document.body, {
+    childList: true,
+    subtree: true
+});
