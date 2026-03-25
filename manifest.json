@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Griffpatch Hub Poll Adder",
+  "version": "1.0",
+  "description": "Adds an 'Add Poll' button to the discussion toolbar.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "poll-adder@your-name.local"
+    }
+  },
+  "permissions": ["activeTab"],
+  "content_scripts": [
+    {
+      "matches": ["https://hub.griffpatch.academy/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ]
+}
