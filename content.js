@@ -1,3 +1,19 @@
+function isGAHub() {
+  return location.hostname === "hub.griffpatch.academy";
+}
+
+function isPollSite() {
+  return (
+    location.hostname === "speechless-parrot.github.io" &&
+    location.pathname.startsWith("/ga-polls")
+  );
+}
+
+let activeComposer = null;
+
+/* =========================
+   COMMON
+========================= */
 
 function isTextInput(el) {
   return !!el && (
@@ -9,20 +25,32 @@ function isTextInput(el) {
 function insertIntoInput(el, text) {
   el.focus();
 
-  if (el.isContentEditable) {
-    const sel = window.getSelection();
+  // 1) Try real paste behavior first
+  try {
+    const data = new DataTransfer();
+    data.setData("text/plain", text);
 
-    if (sel && sel.rangeCount > 0) {
-      const range = sel.getRangeAt(0);
-      range.deleteContents();
-      range.insertNode(document.createTextNode(text));
-      range.collapse(false);
-      sel.removeAllRanges();
-      sel.addRange(range);
-    } else {
-      el.textContent = (el.textContent || "") + text;
+    const pasteEvent = new ClipboardEvent("paste", {
+      bubbles: true,
+      cancelable: true,
+      clipboardData: data
+    });
+
+    Object.defineProperty(pasteEvent, "clipboardData", {
+      value: data
+    });
+
+    const prevented = !el.dispatchEvent(pasteEvent);
+
+    if (prevented) {
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+      return;
     }
-  } else {
+  } catch (_) {}
+
+  // 2) textarea / input fallback
+  if (!el.isContentEditable && typeof el.value === "string") {
     const value = el.value || "";
     const start = el.selectionStart ?? value.length;
     const end = el.selectionEnd ?? value.length;
@@ -31,23 +59,67 @@ function insertIntoInput(el, text) {
 
     const newPos = start + text.length;
     el.setSelectionRange?.(newPos, newPos);
+
+    try {
+      el.dispatchEvent(new InputEvent("input", {
+        bubbles: true,
+        data: text,
+        inputType: "insertFromPaste"
+      }));
+    } catch {
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+    return;
   }
 
-  try {
-    el.dispatchEvent(new InputEvent("input", {
-      bubbles: true,
-      data: text,
-      inputType: "insertText"
-    }));
-  } catch {
+  // 3) contenteditable fallback using block lines
+  if (el.isContentEditable) {
+    const selection = window.getSelection();
+    if (!selection) return;
+
+    let range;
+    if (selection.rangeCount > 0) {
+      range = selection.getRangeAt(0);
+    } else {
+      range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+    }
+
+    range.deleteContents();
+
+    const lines = text.split("\n");
+    const frag = document.createDocumentFragment();
+
+    lines.forEach((line, i) => {
+      if (i === 0) {
+        frag.appendChild(document.createTextNode(line));
+      } else {
+        const div = document.createElement("div");
+        if (line.length) {
+          div.textContent = line;
+        } else {
+          div.appendChild(document.createElement("br"));
+        }
+        frag.appendChild(div);
+      }
+    });
+
+    range.insertNode(frag);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
     el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
   }
-
-  el.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
 /* =========================
    GA SIDE
+========================= */
 
 function rememberFocusedComposer() {
   document.addEventListener("focusin", (e) => {
@@ -119,6 +191,7 @@ function createPollButton(targetInput) {
   btn.addEventListener("click", () => {
     if (targetInput && document.contains(targetInput)) {
       activeComposer = targetInput;
+      targetInput.focus();
     }
     openPollOverlay();
   });
@@ -201,6 +274,7 @@ function setupGAHub() {
 
 /* =========================
    POLL SITE SIDE
+========================= */
 
 function getPollCode() {
   const pollPreview = document.getElementById("pollPreview");
@@ -242,93 +316,3 @@ if (isGAHub()) {
 } else if (isPollSite()) {
   setupPollSite();
 }
-/**
- * GRIFFPATCH ACADEMY HUB - POLL EXTENSION
- * Handles injection into Tiptap/ProseMirror editors.
- */
-
-function createPollButton() {
-    const btn = document.createElement('button');
-    btn.className = 'comments-input-btn gp-poll-btn';
-    btn.type = 'button';
-    btn.title = 'Add Poll (Community Tool)';
-    
-    // SVG icon
-    btn.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 13V7M8 13V3M13 13V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-    `;
-    
-    btn.onclick = (e) => {
-        // Find the specific editor associated with the toolbar clicked
-        // This looks up for the container, then down for the ProseMirror div
-        const container = e.currentTarget.closest('.discussion-form, .comment-form, .modal-content, .comments-input-container');
-        const editor = container ? container.querySelector('.ProseMirror[contenteditable="true"]') : null;
-        
-        window.lastUsedEditor = editor;
-
-        const overlay = document.createElement('div');
-        overlay.className = 'gp-poll-overlay';
-        overlay.innerHTML = `
-            <div class="gp-poll-container">
-                <button class="gp-poll-close">&times;</button>
-                <iframe src="https://speechless-parrot.github.io/ga-polls/" class="gp-poll-iframe"></iframe>
-            </div>
-        `;
-        document.body.appendChild(overlay);
-
-        overlay.querySelector('.gp-poll-close').onclick = () => overlay.remove();
-        overlay.onclick = (event) => { if (event.target === overlay) overlay.remove(); };
-    };
-    return btn;
-}
-
-// LISTEN for the message from the poll creator site
-window.addEventListener('message', (event) => {
-    if (event.origin !== 'https://speechless-parrot.github.io') return;
-
-    if (event.data && event.data.type === 'poll-created') {
-        const pollUrl = event.data.url;
-        const editor = window.lastUsedEditor;
-
-        if (editor) {
-            // Remove the "is-empty" placeholder classes if they exist
-            editor.querySelectorAll('.is-empty').forEach(el => el.classList.remove('is-empty', 'is-editor-empty'));
-
-            // Create a new paragraph with the link
-            const newPara = document.createElement('p');
-            const link = document.createElement('a');
-            link.href = pollUrl;
-            link.innerText = pollUrl;
-            link.target = "_blank";
-            
-            newPara.appendChild(link);
-            editor.appendChild(newPara);
-
-            // Important: Tell the Tiptap editor that the content has changed
-            editor.dispatchEvent(new Event('input', { bubbles: true }));
-            editor.dispatchEvent(new Event('keyup', { bubbles: true }));
-        }
-
-        // Close the popup
-        const overlay = document.querySelector('.gp-poll-overlay');
-        if (overlay) overlay.remove();
-    }
-});
-
-// Find ALL video buttons and inject the poll button
-function injectPollButtons() {
-    const videoButtons = document.querySelectorAll('button[title="Add Video"].comments-input-btn');
-    
-    videoButtons.forEach(videoBtn => {
-        const parent = videoBtn.parentElement;
-        if (parent && !parent.querySelector('.gp-poll-btn')) {
-            videoBtn.after(createPollButton());
-        }
-    });
-}
-
-const observer = new MutationObserver(injectPollButtons);
-observer.observe(document.body, { childList: true, subtree: true });
-injectPollButtons();
