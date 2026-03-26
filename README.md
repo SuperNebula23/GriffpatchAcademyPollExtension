@@ -23,3 +23,4 @@ This browser extension adds a quick-access "Add Poll" button to the [Griffpatch 
 
 ## Credits
 - Extension by [SuperNebula23]
+- With help from [leothelino]
